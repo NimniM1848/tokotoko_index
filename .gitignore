@@ -1,0 +1,11 @@
+# 気象庁JSONの取得結果(検証用の一時データ)
+.cache/
+
+# Pythonのキャッシュ
+__pycache__/
+
+# Actionsが組み立てる配信用フォルダ
+_site/
+
+# ローカルで画面を確かめるための整形済みデータ(scripts/build_data.py --out data)
+/data/

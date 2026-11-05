@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>とことこ指数</title>
+<meta name="description" content="気象庁の予報から計算した、おさんぽのしやすさの目安を、今後約1週間の日ごとに確認できます。">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div>
+      <h1><span class="deco" aria-hidden="true"></span>とことこ指数</h1>
+      <p class="tagline">気象庁の予報から計算した、おさんぽのしやすさの目安</p>
+    </div>
+    <button type="button" id="theme-btn" class="btn" aria-label="表示の明るさを切り替える">表示: 自動</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="notice">これは天気予報ではありません。気象庁が発表した予報値をもとに計算した「指数」です。出かけるときは、気象庁の最新の情報も確認してください。</p>
+
+  <noscript><p class="message">このページは、JavaScriptを有効にすると使えます。</p></noscript>
+
+  <section class="panel" aria-labelledby="h-place">
+    <h2 id="h-place">場所</h2>
+    <div class="selects">
+      <label>地方 <select id="sel-center"></select></label>
+      <label>府県 <select id="sel-office"></select></label>
+      <label>地域 <select id="sel-area"></select></label>
+    </div>
+  </section>
+
+  <p id="status" class="message" role="status" hidden></p>
+
+  <section aria-labelledby="h-days">
+    <h2 id="h-days">7日間のおさんぽ指数</h2>
+    <p id="report-info" class="small muted"></p>
+    <p class="small hint-line">カードを押すと、その日のくわしい内容が下に開きます。</p>
+    <div id="cards" class="cards"></div>
+  </section>
+
+  <section id="detail" class="panel" aria-live="polite" tabindex="-1" hidden></section>
+
+  <section class="panel" aria-labelledby="h-prefs">
+    <h2 id="h-prefs">好み調整</h2>
+    <p class="small muted">つまみを動かすと、下の指数(と上のカード)がすぐに変わります。迷ったら、まず「−」「＋」を1回ずつ押して、変わり方を見てください。設定は、このブラウザに保存されます。</p>
+    <div id="prefs-preview" class="prefs-preview" aria-live="polite"></div>
+    <div id="prefs" class="prefs"></div>
+    <button type="button" id="prefs-reset" class="btn">初期値にもどす</button>
+  </section>
+
+  <section class="panel" aria-labelledby="h-feedback">
+    <h2 id="h-feedback">感想で調整</h2>
+    <p id="fb-intro" class="small muted"></p>
+    <div id="fb-proposal" aria-live="polite"></div>
+    <div id="fb-days"></div>
+    <button type="button" id="fb-clear" class="btn btn-small">記録をすべて消す</button>
+  </section>
+
+  <section class="panel" aria-labelledby="h-transfer">
+    <h2 id="h-transfer">設定の引き継ぎ</h2>
+    <p class="small muted">別の端末やブラウザで、いまの設定(つまみ・場所)を使えます。URLの設定は、サーバーには送られません。</p>
+    <div class="transfer">
+      <label class="small muted" for="share-url">設定入りのURL</label>
+      <div class="transfer-row">
+        <input id="share-url" type="text" readonly class="url-box">
+        <button type="button" id="share-copy" class="btn">コピー</button>
+      </div>
+      <div class="transfer-row">
+        <button type="button" id="export-btn" class="btn">設定と記録をファイルに書き出す</button>
+        <label class="btn file-btn">ファイルから読み込む<input id="import-file" type="file" accept=".json,application/json"></label>
+      </div>
+      <p id="transfer-msg" class="small" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap small">
+    <p>出典：気象庁ホームページ。気象庁の予報値を加工して作成。編集責任は当サイトにあります</p>
+    <p>暑い日の体調管理は、<a href="https://www.wbgt.env.go.jp/" target="_blank" rel="noopener">環境省 熱中症予防情報サイト</a>で最新の情報を確認してください。</p>
+    <p class="muted">指数の計算は、このブラウザの中で行っています。気温や天気の独自の予想はしていません。</p>
+  </div>
+</footer>
+
+<script src="src/score.js"></script>
+<script src="src/forecast.js"></script>
+<script src="src/ui_logic.js"></script>
+<script src="src/feedback.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

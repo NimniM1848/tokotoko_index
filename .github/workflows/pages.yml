@@ -1,0 +1,66 @@
+# 気象庁の予報JSONを1時間ごとに確認し、発表時刻が変わったときだけ、整形して GitHub Pages に配信する。
+# データはコミットしない(履歴が膨らむのを避ける)。Actions が組み立てて、Pages へ直接配信する。
+# 手順の全体は DESIGN.md 第7章。
+name: Build and deploy
+
+on:
+  schedule:
+    - cron: "7 * * * *" # 毎時7分(混み合う毎時0分を避ける)。実行が数十分遅れることがある
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 配信は1つずつ。実行中のものは止めない
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.data.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 気象庁のJSONを取得して整形する。前回配信した index.json と発表時刻を比べ、changed を出す。
+      # 取得に失敗したら、ここで止まり、前回の配信がそのまま残る
+      - id: data
+        run: >
+          python3 -I scripts/build_data.py
+          --out _site/data
+          --previous "${{ steps.pages.outputs.base_url }}/data/index.json"
+
+      # 配信する静的ファイルを集める。テストと検査用のファイルは含めない
+      - name: Assemble site
+        run: |
+          cp -r src config assets _site/
+          cp index.html _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    # 定期実行では、発表時刻が変わっていないときは配信しない。push と手動実行は、常に配信する
+    if: github.event_name != 'schedule' || needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,76 @@
+{
+  "_説明": [
+    "指数の計算に使う係数としきい値。すべて仮置きで、実データを見ながら調整する(DESIGN.md 第4章・第5章)。",
+    "score: 指数 S = base - rain_per_pop × p - heat_per_deg × max(0, T' - U) - cold_per_deg × max(0, L - T') - 風の減点。T' = Tmax + sun_effect × 晴れ度。",
+    "L = (1 - region_alpha) × cold_limit_by_month[月] + region_alpha × (平年の最高気温 - cold_gap)。平年値が無いときは cold_limit_by_month だけを使う。",
+    "wind_penalty: 風の文言の強さ → 減点。気象庁の定義は、やや強い=平均風速10m/s以上、強い=15m/s以上、非常に強い=20m/s以上。作者の経験では8m/s前後でも外に出ない方がよいため、「やや強く」から大きく減点し、20点刻みにした(仮置き)。",
+    "grades: 指数の区分。min 以上で最初に当てはまるものを使う。label は画面に出す言葉(仮置き)。",
+    "preferences: 好み調整スライダーの範囲。初期値は、rain_ng が rain_per_pop、sun_effect が sun_effect、wind_scale が1、hot_offset と cold_offset が0。sun_effect と wind_scale の範囲は設計書に無く、仮置き。",
+    "reasons: 減点の内訳を言葉で出すかどうかの基準。その要因の減点が min_points 以上のときだけ、内訳に出す。",
+    "forecast: 整形済みのデータから日ごとの入力を作る規則(src/forecast.js)。降水確率は、短期の6時間ごとの値のうち、daytime_start_hour 時から daytime_end_hour 時までに収まるコマの最大を使う(おさんぽは日中にするため)。短期の気温は、timeDefines の short_temp_min_hour 時(0時)が「朝の最低気温(0〜9時の最低)」、short_temp_max_hour 時(9時)が「日中の最高気温(9〜18時の最高)」を表す目印で、その時刻の気温ではない(気象庁の定義。2026-11-05夕方の発表のデータでも、9時の値は平年の最高気温より平均3.3℃高く、最高気温として合う)。朝の発表は未確認。",
+    "feedback: 出かけた日の感想で、好み調整のつまみを少しずつ動かす規則(DESIGN.md 第5章)。feelings の pref が動かすつまみ、step が1回で動く幅。pref の無い感想(ちょうどよかった、予報が外れたと思う)は、つまみを動かさない。wrong_forecast を選んだ日の感想は、どれも数えない。同じ向きの感想が propose_after 回たまったら、動かしてよいか確認する。snapshot_days は、その日の指数と入力値を覚えておく日数、record_days は、感想を付けられる(さかのぼれる)日数、always_show_days は、指数を覚えていなくても、感想の欄に必ず出す直近の日数、max_log は感想の記録の上限。",
+    "ui: stale_hours は、気象庁の発表からこの時間を過ぎたら、古いデータだと画面に出す。",
+    "このファイルの値や、T' と気温を逆算できる数値を、画面に出さない(CLAUDE.md)。"
+  ],
+  "score": {
+    "base": 100,
+    "rain_per_pop": 0.6,
+    "heat_upper": 25,
+    "heat_per_deg": 4,
+    "cold_per_deg": 3,
+    "sun_effect": 2,
+    "region_alpha": 0.5,
+    "cold_gap": 6,
+    "wind_penalty": {
+      "やや強く": 45,
+      "強く": 65,
+      "非常に強く": 85
+    },
+    "cold_limit_by_month": {
+      "1": 4, "2": 4, "3": 7, "4": 10, "5": 12, "6": 12,
+      "7": 12, "8": 12, "9": 12, "10": 10, "11": 8, "12": 4
+    }
+  },
+  "grades": [
+    { "min": 80, "id": "excellent", "mark": "◎", "label": "とてもよい" },
+    { "min": 60, "id": "good", "mark": "○", "label": "よい" },
+    { "min": 40, "id": "fair", "mark": "△", "label": "ふつう" },
+    { "min": 20, "id": "poor", "mark": "▲", "label": "あまり向かない" },
+    { "min": 0, "id": "bad", "mark": "✕", "label": "おすすめしない" }
+  ],
+  "preferences": {
+    "rain_ng": { "min": 0.3, "max": 1.0, "step": 0.05 },
+    "cold_offset": { "min": -3, "max": 3, "step": 0.5 },
+    "hot_offset": { "min": -3, "max": 3, "step": 0.5 },
+    "sun_effect": { "min": 0, "max": 4, "step": 0.5 },
+    "wind_scale": { "min": 0, "max": 2, "step": 0.1 }
+  },
+  "reasons": {
+    "min_points": 5
+  },
+  "feedback": {
+    "propose_after": 3,
+    "snapshot_days": 14,
+    "record_days": 7,
+    "always_show_days": 3,
+    "max_log": 200,
+    "feelings": [
+      { "id": "just_right", "label": "ちょうどよかった" },
+      { "id": "too_hot", "label": "暑すぎた", "pref": "hotOffset", "range": "hot_offset", "step": 0.5, "prefLabel": "暑がり度" },
+      { "id": "too_cold", "label": "寒すぎた", "pref": "coldOffset", "range": "cold_offset", "step": 0.5, "prefLabel": "寒がり度" },
+      { "id": "sun_harsh", "label": "日差しがきつかった", "pref": "sunEffect", "range": "sun_effect", "step": 0.5, "prefLabel": "日差しの影響" },
+      { "id": "wind_bothered", "label": "風が気になった", "pref": "windScale", "range": "wind_scale", "step": 0.1, "prefLabel": "風の影響" },
+      { "id": "rain_bothered", "label": "雨が気になった", "pref": "rainNg", "range": "rain_ng", "step": 0.05, "prefLabel": "雨NG度" },
+      { "id": "wrong_forecast", "label": "予報が外れたと思う" }
+    ]
+  },
+  "ui": {
+    "stale_hours": 36
+  },
+  "forecast": {
+    "daytime_start_hour": 6,
+    "daytime_end_hour": 18,
+    "short_temp_min_hour": 0,
+    "short_temp_max_hour": 9
+  }
+}

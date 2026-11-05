@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>とことこ指数 計算部分のテスト</title>
+<style>
+  body { font-family: sans-serif; margin: 1.5rem; line-height: 1.6; }
+  .ok { color: #2a7a2a; }
+  .fail { color: #b3261e; font-weight: bold; }
+  li { margin: .2rem 0; }
+  pre { margin: 0 0 0 1.5rem; white-space: pre-wrap; }
+  h2 { font-size: 1.1rem; margin: 1.2rem 0 .3rem; }
+</style>
+</head>
+<body>
+<h1>計算部分のテスト</h1>
+<p>ファイルを直接開くと設定ファイルを読めないので、<code>python3 -m http.server</code> などで配信して開いてください(プロジェクトの最上位から)。</p>
+<p id="summary">実行中…</p>
+<div id="list"></div>
+<script src="../src/score.js"></script>
+<script src="../src/forecast.js"></script>
+<script src="../src/ui_logic.js"></script>
+<script src="../src/feedback.js"></script>
+<script src="cases.js"></script>
+<script src="forecast_cases.js"></script>
+<script src="ui_cases.js"></script>
+<script src="feedback_cases.js"></script>
+<script>
+  (async () => {
+    const get = (p) => fetch(p).then((r) => { if (!r.ok) throw new Error(p + ' を読めない'); return r.json(); });
+    const summary = document.getElementById('summary');
+    try {
+      const [params, weather, stationArea, tokyo, aomori] = await Promise.all([
+        get('../config/params.json'), get('../config/weather_codes.json'), get('../config/station_area.json'),
+        get('fixtures/130000.json'), get('fixtures/020000.json'),
+      ]);
+      const fixtures = { '130000': tokyo, '020000': aomori };
+      const groups = [
+        ['指数の計算(src/score.js)', TokotokoCases.runTests(Tokotoko, params, weather)],
+        ['日ごとの入力(src/forecast.js)', TokotokoForecastCases.runTests(TokotokoForecast, Tokotoko, params, weather, stationArea, fixtures)],
+        ['画面の部品(src/ui_logic.js)', TokotokoUiCases.runTests(TokotokoUi, params, weather)],
+        ['感想による調整(src/feedback.js)', TokotokoFeedbackCases.runTests(TokotokoFeedback, Tokotoko, params)],
+      ];
+      const list = document.getElementById('list');
+      let total = 0, failed = 0;
+      for (const [title, results] of groups) {
+        const h = document.createElement('h2');
+        h.textContent = title;
+        list.appendChild(h);
+        for (const r of results) {
+          total++;
+          const li = document.createElement('li');
+          li.className = r.ok ? 'ok' : 'fail';
+          li.textContent = (r.ok ? '○ ' : '✕ ') + r.name;
+          if (!r.ok) {
+            failed++;
+            const pre = document.createElement('pre');
+            pre.textContent = r.message;
+            li.appendChild(pre);
+          }
+          list.appendChild(li);
+        }
+      }
+      summary.textContent = `${total - failed} / ${total} 件が成功`;
+      summary.className = failed ? 'fail' : 'ok';
+    } catch (e) {
+      summary.textContent = '失敗: ' + e.message;
+      summary.className = 'fail';
+    }
+  })();
+</script>
+</body>
+</html>
